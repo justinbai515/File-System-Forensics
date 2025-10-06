@@ -48,3 +48,4 @@ void read_inode( int                           fd,        /* the disk image file
 				 ); 
 
 #endif
+// checking commit
