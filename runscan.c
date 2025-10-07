@@ -158,7 +158,7 @@ int main(int argc, char **argv)
                 make_file_entry(fd, argv[2], inode, i, "jpg");
             } else if (is_txt(buff)) {
                 make_file_entry(fd, argv[2], inode, i, "txt");
-            } else if (is_pdf) {
+            } else if (is_pdf(buff)) {
                 make_file_entry(fd, argv[2], inode, i, "pdf");
             }
         }
