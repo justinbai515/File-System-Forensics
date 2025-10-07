@@ -14,19 +14,43 @@ Returns if the buffer is characteristic of a jpg file
 */
 int is_jpg(char * buffer)
 {
-    int result = 0;
 
-    if (buffer[0] == (char)0xff &&
+    return (buffer[0] == (char)0xff &&
         buffer[1] == (char)0xd8 &&
         buffer[2] == (char)0xff &&
         (buffer[3] == (char)0xe0 ||
         buffer[3] == (char)0xe1 ||
-        buffer[3] == (char)0xe8)) 
-    {
-        result = 1;
-    }
+        buffer[3] == (char)0xe8));
+}
 
-    return result;
+int is_txt(char * buffer) 
+{
+    return (buffer[0] == (char)0xff && 
+                buffer[1] == (char)0xfe) || 
+            (buffer[0] == (char)0xfe && 
+                buffer[1] == (char)0xff) || 
+            (buffer[0] == (char)0xef &&
+                buffer[1] == (char)0xbb &&
+                buffer[2] == (char)0xbf) || 
+            (buffer[0] == (char)0xff && 
+                buffer[1] == (char)0xfe && 
+                buffer[2] == (char)0x00 && 
+                buffer[3] == (char)0x00) ||
+            (buffer[0] == (char)0x00 && 
+                buffer[1] == (char)0x00 && 
+                buffer[2] == (char)0xfe && 
+                buffer[3] == (char)0xff) ||
+            (buffer[0] == (char)0x0e && 
+            buffer[1] == (char)0xfe && 
+            buffer[2] == (char)0xff);
+
+}
+int is_pdf(char * buffer) {
+    return (buffer[0] == (char)0x25 &&
+                buffer[1] == (char)0x50 &&
+                buffer[2] == (char)0x44 &&
+                buffer[3] == (char)0x46 &&
+                buffer[4] == (char)0x2d);
 }
 
 size_t copy_block(int src_fd, int dst_fd, uint_least32_t block, size_t bytes_to_copy) {
@@ -62,11 +86,11 @@ void handle_indirect_block(int src_fd, int dst_fd, int n_indirection, uint_least
     }
 }
 
-void make_jpg_entry(int fd, char * dir_name, struct ext2_inode node, int num) 
+void make_file_entry(int fd, char * dir_name, struct ext2_inode node, int num, char * file_type) 
 {
     char entry[256];
     uint_least32_t * node_i_block = node.i_block;
-    sprintf(entry, "%s/file-%d.jpg", dir_name, num);
+    sprintf(entry, "%s/file-%d.%s", dir_name, num, file_type);
     int new_fd = open(entry, O_WRONLY | O_CREAT);
     uint_least32_t bytes_to_write = node.i_size;
     
@@ -128,9 +152,15 @@ int main(int argc, char **argv)
         read(fd, buff, KB);
 
         // check if inode represents jpg
-        if (S_ISREG(inode.i_mode) && is_jpg(buff)) 
+        if (S_ISREG(inode.i_mode)) 
         {
-            make_jpg_entry(fd, argv[2], inode, i);
+            if (is_jpg(buff)) {
+                make_file_entry(fd, argv[2], inode, i, "jpg");
+            } else if (is_txt(buff)) {
+                make_file_entry(fd, argv[2], inode, i, "txt");
+            } else if (is_pdf) {
+                make_file_entry(fd, argv[2], inode, i, "pdf");
+            }
         }
     }
 
